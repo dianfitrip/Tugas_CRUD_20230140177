@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manajemen Data KTP</title>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f4f7f6;
+        }
+        h2 {
+            text-align: center;
+            color: #333;
+        }
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        .form-group input, .form-group select, .form-group textarea {
+            width: 100%;
+            padding: 8px;
+            box-sizing: border-box;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        button {
+            padding: 10px 15px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        .btn-submit {
+            background-color: #28a745;
+            color: white;
+        }
+        .btn-submit:hover { background-color: #218838; }
+        .btn-reset {
+            background-color: #6c757d;
+            color: white;
+        }
+        .btn-reset:hover { background-color: #5a6268; }
+        .btn-edit {
+            background-color: #ffc107;
+            color: black;
+            padding: 5px 10px;
+        }
+        .btn-delete {
+            background-color: #dc3545;
+            color: white;
+            padding: 5px 10px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        table, th, td {
+            border: 1px solid #ddd;
+        }
+        th, td {
+            padding: 10px;
+            text-align: left;
+        }
+        th {
+            background-color: #007bff;
+            color: white;
+        }
+        .feedback {
+            padding: 10px;
+            margin-bottom: 15px;
+            border-radius: 4px;
+            display: none;
+            font-weight: bold;
+        }
+        .feedback.success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .feedback.error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>Sistem Manajemen Data KTP</h2>
+
+    <div id="notification" class="feedback"></div>
+
+    <form id="ktpForm">
+        <input type="hidden" id="ktpId">
+
+        <div class="form-group">
+            <label for="nomorKtp">Nomor KTP</label>
+            <input type="text" id="nomorKtp" required placeholder="Masukkan NIK KTP">
+        </div>
+        <div class="form-group">
+            <label for="namaLengkap">Nama Lengkap</label>
+            <input type="text" id="namaLengkap" required placeholder="Masukkan Nama Lengkap">
+        </div>
+        <div class="form-group">
+            <label for="alamat">Alamat</label>
+            <textarea id="alamat" rows="3" required placeholder="Masukkan Alamat Lengkap"></textarea>
+        </div>
+        <div class="form-group">
+            <label for="tanggalLahir">Tanggal Lahir</label>
+            <input type="date" id="tanggalLahir" required>
+        </div>
+        <div class="form-group">
+            <label for="jenisKelamin">Jenis Kelamin</label>
+            <select id="jenisKelamin" required>
+                <option value="">-- Pilih Jenis Kelamin --</option>
+                <option value="Laki-laki">Laki-laki</option>
+                <option value="Perempuan">Perempuan</option>
+            </select>
+        </div>
+
+        <button type="submit" class="btn-submit" id="btnSave">Simpan Data</button>
+        <button type="button" class="btn-reset" onclick="resetForm()">Batal</button>
+    </form>
+
+    <table>
+        <thead>
+        <tr>
+            <th>No KTP</th>
+            <th>Nama Lengkap</th>
+            <th>Alamat</th>
+            <th>Tanggal Lahir</th>
+            <th>Jenis Kelamin</th>
+            <th>Aksi</th>
+        </tr>
+        </thead>
+        <tbody id="tableBody">
+        </tbody>
+    </table>
+</div>
+
+<script>
+    // Konfigurasi URL API Spring Boot
+    const API_URL = "http://localhost:8080/ktp";
+
+    // Dijalankan saat halaman pertama kali dimuat
+    $(document).ready(function() {
+        loadData();
+
+        // Event Submit Form untuk Create (POST) / Update (PUT)
+        $('#ktpForm').submit(function(e) {
+            e.preventDefault(); // Mencegah reload halaman
+            saveData();
+        });
+    });
+
+    // 1. GET: Mengambil data dari API dan menampilkannya di tabel
+    function loadData() {
+        $.ajax({
+            url: API_URL,
+            type: "GET",
+            success: function(response) {
+                let rows = '';
+                response.forEach(function(ktp) {
+                    // Format tanggal untuk tampilan tabel
+                    let tglLahir = new Date(ktp.tanggalLahir).toISOString().split('T')[0];
+
+                    rows += `<tr>
+                        <td>${ktp.nomorKtp}</td>
+                        <td>${ktp.namaLengkap}</td>
+                        <td>${ktp.alamat}</td>
+                        <td>${tglLahir}</td>
+                        <td>${ktp.jenisKelamin}</td>
+                        <td>
+                            <button class="btn-edit" onclick="editData(${ktp.id})">Edit</button>
+                            <button class="btn-delete" onclick="deleteData(${ktp.id})">Hapus</button>
+                        </td>
+                    </tr>`;
+                });
+                $('#tableBody').html(rows);
+            },
+            error: function(err) {
+                showNotification("Gagal memuat data dari server!", "error");
+            }
+        });
+    }
+
+    // 2. POST / PUT: Menyimpan atau Memperbarui Data
+    function saveData() {
+        const id = $('#ktpId').val();
+
+        // Mempersiapkan payload JSON
+        const payload = {
+            nomorKtp: $('#nomorKtp').val(),
+            namaLengkap: $('#namaLengkap').val(),
+            alamat: $('#alamat').val(),
+            tanggalLahir: $('#tanggalLahir').val(),
+            jenisKelamin: $('#jenisKelamin').val()
+        };
+
+        // Jika ID kosong berarti Tambah Data (POST), jika ada berarti Edit Data (PUT)
+        const requestType = id ? "PUT" : "POST";
+        const requestUrl = id ? `${API_URL}/${id}` : API_URL;
+
+        $.ajax({
+            url: requestUrl,
+            type: requestType,
+            contentType: "application/json",
+            data: JSON.stringify(payload),
+            success: function(response) {
+                showNotification(id ? "Data berhasil diperbarui!" : "Data berhasil ditambahkan!", "success");
+                resetForm();
+                loadData(); // Refresh tabel secara otomatis
+            },
+            error: function(xhr) {
+                // Menangani kemungkinan error (misal: Nomor KTP sudah ada sesuai validasi backend)
+                showNotification("Gagal menyimpan data! Pastikan Nomor KTP belum digunakan.", "error");
+            }
+        });
+    }
+
+    // 3. Menyiapkan Form untuk Edit (GET by ID)
+    function editData(id) {
+        $.ajax({
+            url: `${API_URL}/${id}`,
+            type: "GET",
+            success: function(ktp) {
+                $('#ktpId').val(ktp.id);
+                $('#nomorKtp').val(ktp.nomorKtp);
+                $('#namaLengkap').val(ktp.namaLengkap);
+                $('#alamat').val(ktp.alamat);
+
+                // Format tanggal dari API (timestamp/ISO) agar sesuai dengan input type="date" (YYYY-MM-DD)
+                let tglLahir = new Date(ktp.tanggalLahir).toISOString().split('T')[0];
+                $('#tanggalLahir').val(tglLahir);
+
+                $('#jenisKelamin').val(ktp.jenisKelamin);
+
+                $('#btnSave').text("Update Data");
+                $("html, body").animate({ scrollTop: 0 }, "slow"); // Scroll ke atas menuju form
+            },
+            error: function() {
+                showNotification("Gagal mengambil detail data!", "error");
+            }
+        });
+    }
+
+    // 4. DELETE: Menghapus Data
+    function deleteData(id) {
+        if(confirm("Apakah Anda yakin ingin menghapus data KTP ini?")) {
+            $.ajax({
+                url: `${API_URL}/${id}`,
+                type: "DELETE",
+                success: function() {
+                    showNotification("Data berhasil dihapus!", "success");
+                    loadData(); // Refresh tabel setelah dihapus
+                },
+                error: function() {
+                    showNotification("Gagal menghapus data!", "error");
+                }
+            });
+        }
+    }
+
+    // Fungsi Utilitas: Mengosongkan form
+    function resetForm() {
+        $('#ktpId').val('');
+        $('#ktpForm')[0].reset();
+        $('#btnSave').text("Simpan Data");
+    }
+
+    // Fungsi Utilitas: Menampilkan notifikasi / feedback pengguna
+    function showNotification(message, type) {
+        const notification = $('#notification');
+        notification.removeClass("success error").addClass(type).text(message).fadeIn();
+
+        // Sembunyikan notifikasi setelah 3.5 detik
+        setTimeout(function() {
+            notification.fadeOut();
+        }, 3500);
+    }
+</script>
+
+</body>
+</html>
