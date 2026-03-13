@@ -28,14 +28,22 @@ $(document).ready(function() {
                 Swal.fire({
                     icon: 'success',
                     title: 'Berhasil!',
-                    text: res.message,
+                    // PERBAIKAN: Gunakan pesan statis karena backend tidak mengirim res.message
+                    text: isEdit ? 'Data KTP berhasil diperbarui!' : 'Data KTP berhasil ditambahkan!',
                     confirmButtonColor: '#0056b3'
                 });
                 resetForm();
                 loadData();
             },
             error: function(xhr) {
-                let msg = xhr.responseJSON ? xhr.responseJSON.message : "Terjadi kesalahan!";
+                // PERBAIKAN: Pesan error penanganan validasi duplikat NIK
+                let msg = "Terjadi kesalahan saat menyimpan data!";
+                if (xhr.status === 500) {
+                    msg = "Pastikan Nomor KTP belum digunakan oleh data lain.";
+                } else if (xhr.responseJSON && xhr.responseJSON.message) {
+                    msg = xhr.responseJSON.message;
+                }
+
                 Swal.fire({
                     icon: 'error',
                     title: 'Oops...',
@@ -56,18 +64,23 @@ function loadData() {
         let tbody = $("#ktpTable tbody");
         tbody.empty();
 
-        if(res.data.length === 0){
+        // PERBAIKAN: Backend mengembalikan array secara langsung ke 'res', bukan 'res.data'
+        if(!res || res.length === 0){
             tbody.append(`<tr><td colspan="7" style="text-align:center;">Tidak ada data</td></tr>`);
             return;
         }
 
-        $.each(res.data, function(index, ktp) {
+        // PERBAIKAN: Looping menggunakan 'res'
+        $.each(res, function(index, ktp) {
+            // PERBAIKAN: Format tanggal agar tampil rapi di tabel (YYYY-MM-DD)
+            let tglLahir = new Date(ktp.tanggalLahir).toISOString().split('T')[0];
+
             tbody.append(`<tr>
                 <td>${index + 1}</td>
                 <td>${ktp.nomorKtp}</td>
                 <td>${ktp.namaLengkap}</td>
                 <td>${ktp.alamat}</td>
-                <td>${ktp.tanggalLahir}</td>
+                <td>${tglLahir}</td>
                 <td>${ktp.jenisKelamin}</td>
                 <td>
                     <button class="btn-edit" onclick="editData(${ktp.id})">Edit</button>
@@ -80,12 +93,18 @@ function loadData() {
 
 window.editData = function(id) {
     $.get(`${API_URL}/${id}`, function(res) {
-        let ktp = res.data;
+        // PERBAIKAN: Backend mengembalikan object secara langsung ke 'res', bukan 'res.data'
+        let ktp = res;
+
         $("#idKtp").val(ktp.id);
         $("#nomorKtp").val(ktp.nomorKtp);
         $("#namaLengkap").val(ktp.namaLengkap);
         $("#alamat").val(ktp.alamat);
-        $("#tanggalLahir").val(ktp.tanggalLahir);
+
+        // PERBAIKAN: Tanggal dari DB harus diformat ke (YYYY-MM-DD) agar bisa masuk ke <input type="date">
+        let tglLahir = new Date(ktp.tanggalLahir).toISOString().split('T')[0];
+        $("#tanggalLahir").val(tglLahir);
+
         $("#jenisKelamin").val(ktp.jenisKelamin);
 
         $("#btnSave").text("Update Data");
@@ -109,14 +128,23 @@ window.deleteData = function(id) {
             $.ajax({
                 url: `${API_URL}/${id}`,
                 type: "DELETE",
-                success: function(res) {
+                success: function() {
+                    // PERBAIKAN: Hilangkan parameter res dan pakai string manual
                     Swal.fire({
                         title: 'Terhapus!',
-                        text: res.message,
+                        text: "Data KTP berhasil dihapus.",
                         icon: 'success',
                         confirmButtonColor: '#0056b3'
                     });
                     loadData();
+                },
+                error: function() {
+                    Swal.fire({
+                        title: 'Gagal!',
+                        text: 'Terjadi kesalahan saat menghapus data.',
+                        icon: 'error',
+                        confirmButtonColor: '#d6336c'
+                    });
                 }
             });
         }
