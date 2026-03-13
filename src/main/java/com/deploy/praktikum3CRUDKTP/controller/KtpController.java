@@ -38,7 +38,11 @@ public class KtpController {
     }
 
     @DeleteMapping("/{id}")
-    public void delete(@PathVariable Integer id) {
+    public java.util.Map<String, String> delete(@PathVariable Integer id) {
         service.delete(id);
+        java.util.Map<String, String> response = new java.util.HashMap<>();
+        response.put("message", "Data KTP berhasil dihapus!");
+
+        return response;
     }
 }
