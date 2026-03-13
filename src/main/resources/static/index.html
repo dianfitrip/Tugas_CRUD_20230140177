@@ -156,21 +156,18 @@
 </div>
 
 <script>
-    // Konfigurasi URL API Spring Boot
-    const API_URL = "http://localhost:8080/ktp";
+    // PERBAIKAN: Mengubah port menjadi 8081 sesuai dengan application.properties
+    const API_URL = "http://localhost:8081/ktp";
 
-    // Dijalankan saat halaman pertama kali dimuat
     $(document).ready(function() {
         loadData();
 
-        // Event Submit Form untuk Create (POST) / Update (PUT)
         $('#ktpForm').submit(function(e) {
-            e.preventDefault(); // Mencegah reload halaman
+            e.preventDefault();
             saveData();
         });
     });
 
-    // 1. GET: Mengambil data dari API dan menampilkannya di tabel
     function loadData() {
         $.ajax({
             url: API_URL,
@@ -178,7 +175,6 @@
             success: function(response) {
                 let rows = '';
                 response.forEach(function(ktp) {
-                    // Format tanggal untuk tampilan tabel
                     let tglLahir = new Date(ktp.tanggalLahir).toISOString().split('T')[0];
 
                     rows += `<tr>
@@ -195,17 +191,15 @@
                 });
                 $('#tableBody').html(rows);
             },
-            error: function(err) {
-                showNotification("Gagal memuat data dari server!", "error");
+            error: function(xhr) {
+                showNotification("Gagal memuat data dari server! Pastikan aplikasi Spring Boot menyala di port 8081.", "error");
             }
         });
     }
 
-    // 2. POST / PUT: Menyimpan atau Memperbarui Data
     function saveData() {
         const id = $('#ktpId').val();
 
-        // Mempersiapkan payload JSON
         const payload = {
             nomorKtp: $('#nomorKtp').val(),
             namaLengkap: $('#namaLengkap').val(),
@@ -214,7 +208,6 @@
             jenisKelamin: $('#jenisKelamin').val()
         };
 
-        // Jika ID kosong berarti Tambah Data (POST), jika ada berarti Edit Data (PUT)
         const requestType = id ? "PUT" : "POST";
         const requestUrl = id ? `${API_URL}/${id}` : API_URL;
 
@@ -226,16 +219,28 @@
             success: function(response) {
                 showNotification(id ? "Data berhasil diperbarui!" : "Data berhasil ditambahkan!", "success");
                 resetForm();
-                loadData(); // Refresh tabel secara otomatis
+                loadData();
             },
             error: function(xhr) {
-                // Menangani kemungkinan error (misal: Nomor KTP sudah ada sesuai validasi backend)
-                showNotification("Gagal menyimpan data! Pastikan Nomor KTP belum digunakan.", "error");
+                // PERBAIKAN: Pesan error dinamis agar lebih mudah melakukan debugging
+                let errorMsg = "Gagal menyimpan data!";
+                if (xhr.status === 0) {
+                    errorMsg = "Gagal terhubung ke server. Periksa koneksi atau port API.";
+                } else if (xhr.status === 500) {
+                    errorMsg = "Terjadi kesalahan di server. Pastikan Nomor KTP belum digunakan.";
+                } else if (xhr.responseText) {
+                    try {
+                        let res = JSON.parse(xhr.responseText);
+                        if (res.message) errorMsg = res.message;
+                    } catch (e) {
+                        errorMsg = xhr.responseText;
+                    }
+                }
+                showNotification(errorMsg, "error");
             }
         });
     }
 
-    // 3. Menyiapkan Form untuk Edit (GET by ID)
     function editData(id) {
         $.ajax({
             url: `${API_URL}/${id}`,
@@ -246,14 +251,13 @@
                 $('#namaLengkap').val(ktp.namaLengkap);
                 $('#alamat').val(ktp.alamat);
 
-                // Format tanggal dari API (timestamp/ISO) agar sesuai dengan input type="date" (YYYY-MM-DD)
                 let tglLahir = new Date(ktp.tanggalLahir).toISOString().split('T')[0];
                 $('#tanggalLahir').val(tglLahir);
 
                 $('#jenisKelamin').val(ktp.jenisKelamin);
 
                 $('#btnSave').text("Update Data");
-                $("html, body").animate({ scrollTop: 0 }, "slow"); // Scroll ke atas menuju form
+                $("html, body").animate({ scrollTop: 0 }, "slow");
             },
             error: function() {
                 showNotification("Gagal mengambil detail data!", "error");
@@ -261,7 +265,6 @@
         });
     }
 
-    // 4. DELETE: Menghapus Data
     function deleteData(id) {
         if(confirm("Apakah Anda yakin ingin menghapus data KTP ini?")) {
             $.ajax({
@@ -269,7 +272,7 @@
                 type: "DELETE",
                 success: function() {
                     showNotification("Data berhasil dihapus!", "success");
-                    loadData(); // Refresh tabel setelah dihapus
+                    loadData();
                 },
                 error: function() {
                     showNotification("Gagal menghapus data!", "error");
@@ -278,22 +281,19 @@
         }
     }
 
-    // Fungsi Utilitas: Mengosongkan form
     function resetForm() {
         $('#ktpId').val('');
         $('#ktpForm')[0].reset();
         $('#btnSave').text("Simpan Data");
     }
 
-    // Fungsi Utilitas: Menampilkan notifikasi / feedback pengguna
     function showNotification(message, type) {
         const notification = $('#notification');
         notification.removeClass("success error").addClass(type).text(message).fadeIn();
 
-        // Sembunyikan notifikasi setelah 3.5 detik
         setTimeout(function() {
             notification.fadeOut();
-        }, 3500);
+        }, 4000);
     }
 </script>
 
