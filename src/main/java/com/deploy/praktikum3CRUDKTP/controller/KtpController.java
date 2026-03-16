@@ -1,6 +1,6 @@
 package com.deploy.praktikum3CRUDKTP.controller;
 
-import com.deploy.praktikum3CRUDKTP.dto.KtpDTO;
+import com.deploy.praktikum3CRUDKTP.model.dto.KtpDTO;
 import com.deploy.praktikum3CRUDKTP.service.KtpService;
 import org.springframework.web.bind.annotation.*;
 

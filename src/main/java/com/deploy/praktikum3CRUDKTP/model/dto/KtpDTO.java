@@ -1,4 +1,4 @@
-package com.deploy.praktikum3CRUDKTP.dto;
+package com.deploy.praktikum3CRUDKTP.model.dto;
 
 import lombok.Data;
 import java.util.Date;

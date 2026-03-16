@@ -1,6 +1,6 @@
 package com.deploy.praktikum3CRUDKTP.service;
 
-import com.deploy.praktikum3CRUDKTP.dto.KtpDTO;
+import com.deploy.praktikum3CRUDKTP.model.dto.KtpDTO;
 import java.util.List;
 
 public interface KtpService {

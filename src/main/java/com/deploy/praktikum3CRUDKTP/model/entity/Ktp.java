@@ -1,4 +1,4 @@
-package com.deploy.praktikum3CRUDKTP.entity;
+package com.deploy.praktikum3CRUDKTP.model.entity;
 
 
 import jakarta.persistence.*;

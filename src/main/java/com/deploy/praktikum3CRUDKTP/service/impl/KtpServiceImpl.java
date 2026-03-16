@@ -1,7 +1,7 @@
 package com.deploy.praktikum3CRUDKTP.service.impl;
 
-import com.deploy.praktikum3CRUDKTP.dto.KtpDTO;
-import com.deploy.praktikum3CRUDKTP.entity.Ktp;
+import com.deploy.praktikum3CRUDKTP.model.dto.KtpDTO;
+import com.deploy.praktikum3CRUDKTP.model.entity.Ktp;
 import com.deploy.praktikum3CRUDKTP.mapper.KtpMapper;
 import com.deploy.praktikum3CRUDKTP.repository.KtpRepository;
 import com.deploy.praktikum3CRUDKTP.service.KtpService;
